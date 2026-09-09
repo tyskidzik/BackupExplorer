@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -19,10 +19,10 @@ public partial class MainWindow : FluentWindow
 
     public static readonly IValueConverter BoolToFontWeightConverter = new BoolToFontWeightConverterInternal();
 
-    public MainWindow()
+    public MainWindow(MainViewModel? viewModel = null)
     {
         InitializeComponent();
-        _viewModel = new MainViewModel();
+        _viewModel = viewModel ?? new MainViewModel();
         DataContext = _viewModel;
     }
 

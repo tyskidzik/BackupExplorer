@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -139,7 +139,7 @@ public class ExplorerViewModel : ViewModelBase
 
     public event Action? SelectionChanged;
 
-    public ExplorerViewModel()
+    public ExplorerViewModel(bool autoLoad = true)
     {
         GoBackCommand = new RelayCommand(GoBack, () => CanGoBack);
         GoForwardCommand = new RelayCommand(GoForward, () => CanGoForward);
@@ -158,14 +158,17 @@ public class ExplorerViewModel : ViewModelBase
             }
         });
 
-        LoadSidebars();
-
-        string initialPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        if (!Directory.Exists(initialPath))
+        if (autoLoad)
         {
-            initialPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            LoadSidebars();
+
+            string initialPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            if (!Directory.Exists(initialPath))
+            {
+                initialPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            }
+            _ = NavigateToAsync(initialPath, false);
         }
-        _ = NavigateToAsync(initialPath, false);
     }
 
     private void LoadSidebars()
@@ -400,6 +403,22 @@ public class ExplorerViewModel : ViewModelBase
             UpdateStats();
             SelectionChanged?.Invoke();
         }
+    }
+
+    public void SetItemsForDisplay(IEnumerable<ExplorerItem> items)
+    {
+        _allItems = items.ToList();
+        DisplayedItems.Clear();
+        foreach (var item in _allItems)
+        {
+            if (item.IsSelected)
+            {
+                _selectedPaths.Add(item.FullPath);
+                _selectedItemCache[item.FullPath] = item;
+            }
+            DisplayedItems.Add(item);
+        }
+        UpdateStats();
     }
 
     public void UpdateStats()

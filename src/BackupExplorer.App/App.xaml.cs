@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,6 +26,22 @@ public partial class App : Application
 
         try
         {
+            if (Array.Exists(e.Args, a => a.Equals("--demo-screenshots", StringComparison.OrdinalIgnoreCase)))
+            {
+                Log("Generating anonymized demo screenshots...");
+                string docsDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "docs", "screenshots"));
+                var dirs = new System.Collections.Generic.List<string> { docsDir };
+                string? envDir = Environment.GetEnvironmentVariable("SCREENSHOT_OUTPUT_DIR");
+                if (!string.IsNullOrEmpty(envDir) && Directory.Exists(envDir))
+                {
+                    dirs.Add(envDir);
+                }
+                BackupExplorer.App.Services.DemoScreenshotService.GenerateMockScreenshots(dirs.ToArray());
+                Log("Demo screenshots generated successfully.");
+                Shutdown(0);
+                return;
+            }
+
             Log("Creating MainWindow...");
             var mainWindow = new MainWindow();
             Log("Showing MainWindow...");

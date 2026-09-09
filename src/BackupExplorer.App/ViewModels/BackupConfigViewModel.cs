@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -234,7 +234,7 @@ public class BackupConfigViewModel : ViewModelBase
         UpdateStagedStats();
     }
 
-    private void UpdateStagedStats()
+    public void UpdateStagedStats()
     {
         OnPropertyChanged(nameof(TotalStagedCount));
         OnPropertyChanged(nameof(TotalStagedSizeBytes));

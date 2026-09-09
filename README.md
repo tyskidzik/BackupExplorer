@@ -1,7 +1,15 @@
-﻿# Backup Explorer
+# Backup Explorer
 
 A modern, high-performance Windows backup and archiving utility built on **.NET 8** and **WPF** featuring **Windows 11 Fluent 2 Design** (`WPF-UI`) and **SharpCompress**. 
 Made for personal use, but it turned out quite useful so i decided to share.
+
+---
+
+## Screenshots
+
+| File Explorer & Backup Configuration | Live Streaming Compression Progress |
+| :---: | :---: |
+| ![Backup Explorer UI](docs/screenshots/explorer_view.png) | ![Live Progress Modal](docs/screenshots/progress_modal.png) |
 
 ---
 

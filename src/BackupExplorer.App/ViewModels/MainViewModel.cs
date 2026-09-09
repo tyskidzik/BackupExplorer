@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,12 +41,12 @@ public class MainViewModel : ViewModelBase
     public ICommand StartBackupCommand { get; }
     public ICommand ToggleThemeCommand { get; }
 
-    public MainViewModel()
+    public MainViewModel(ExplorerViewModel? explorer = null, BackupConfigViewModel? config = null, BackupExecutionViewModel? execution = null)
     {
         _engine = new BackupEngine();
-        Explorer = new ExplorerViewModel();
-        Config = new BackupConfigViewModel();
-        Execution = new BackupExecutionViewModel();
+        Explorer = explorer ?? new ExplorerViewModel();
+        Config = config ?? new BackupConfigViewModel();
+        Execution = execution ?? new BackupExecutionViewModel();
 
         Execution.Closed += () => IsProgressModalOpen = false;
 
