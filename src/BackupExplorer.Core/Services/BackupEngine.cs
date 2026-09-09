@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -49,7 +49,26 @@ public class BackupEngine : IBackupEngine
             var result = new List<BackupItem>();
             var validPaths = paths.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
 
-            var driveRoots = validPaths
+            // Prune redundant subpaths if their parent directory is already in paths
+            var prunedPaths = new List<string>();
+            var sortedPaths = validPaths
+                .Select(p => Path.GetFullPath(p))
+                .OrderBy(p => p.Length)
+                .ToList();
+
+            foreach (var p in sortedPaths)
+            {
+                bool isRedundant = prunedPaths.Any(parent =>
+                    Directory.Exists(parent) &&
+                    p.StartsWith(parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+
+                if (!isRedundant && !prunedPaths.Contains(p, StringComparer.OrdinalIgnoreCase))
+                {
+                    prunedPaths.Add(p);
+                }
+            }
+
+            var driveRoots = prunedPaths
                 .Select(p =>
                 {
                     try { return Path.GetPathRoot(Path.GetFullPath(p)); }
@@ -61,7 +80,7 @@ public class BackupEngine : IBackupEngine
 
             bool isMultiDrive = driveRoots.Count > 1;
 
-            foreach (var path in validPaths)
+            foreach (var path in prunedPaths)
             {
                 ct.ThrowIfCancellationRequested();
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -57,6 +57,21 @@ public class BackupEngineTests : IDisposable
         Assert.Contains(items, i => i.RelativePath.EndsWith("file1.txt"));
         Assert.Contains(items, i => i.RelativePath.EndsWith("file2.log"));
         Assert.Contains(items, i => i.RelativePath.Contains("SubFolder") && i.RelativePath.EndsWith("nested.txt"));
+    }
+
+    [Fact]
+    public async Task ScanItemsAsync_PrunesRedundantChildPaths_WhenParentFolderIncluded()
+    {
+        string childFile = Path.Combine(_sourceDir, "file1.txt");
+        string nestedFolder = Path.Combine(_sourceDir, "SubFolder");
+        string nestedFile = Path.Combine(nestedFolder, "nested.txt");
+
+        // Pass parent folder AND its children in the path list
+        var items = await _engine.ScanItemsAsync(new[] { _sourceDir, childFile, nestedFolder, nestedFile });
+
+        // Should not have duplicates; should still be exactly 3 unique items
+        Assert.Equal(3, items.Count);
+        Assert.Equal(3, items.Select(i => i.FullPath).Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 
     [Fact]

@@ -96,8 +96,8 @@ public class ExplorerViewModel : ViewModelBase
         return _sortDirection == ListSortDirection.Ascending ? "  ▲" : "  ▼";
     }
 
-    public int SelectedCount => _selectedPaths.Count;
-    public long SelectedSizeBytes => _selectedItemCache.Values.Sum(i => i.Size);
+    public int SelectedCount => _allItems.Count(i => i.IsSelected);
+    public long SelectedSizeBytes => _allItems.Where(i => i.IsSelected).Sum(i => i.Size);
     public string SelectedSizeFormatted => FormatBytes(SelectedSizeBytes);
     public string SelectedSummary => $"{SelectedCount} selected ({SelectedSizeFormatted})";
 
@@ -363,9 +363,17 @@ public class ExplorerViewModel : ViewModelBase
                 item.PropertyChanged -= Item_PropertyChanged;
             }
 
+            bool isCurrentFolderSelected = _selectedPaths.Contains(path) || IsAncestorFolderSelected(path);
+
             foreach (var item in items)
             {
-                if (_selectedPaths.Contains(item.FullPath))
+                if (isCurrentFolderSelected)
+                {
+                    item.IsSelected = true;
+                    _selectedPaths.Add(item.FullPath);
+                    _selectedItemCache[item.FullPath] = item;
+                }
+                else if (_selectedPaths.Contains(item.FullPath))
                 {
                     item.IsSelected = true;
                     _selectedItemCache[item.FullPath] = item;
@@ -385,6 +393,38 @@ public class ExplorerViewModel : ViewModelBase
         }
     }
 
+    private bool IsAncestorFolderSelected(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+
+        string? parent = Path.GetDirectoryName(path);
+        while (!string.IsNullOrEmpty(parent))
+        {
+            if (_selectedPaths.Contains(parent))
+            {
+                return true;
+            }
+            parent = Path.GetDirectoryName(parent);
+        }
+        return false;
+    }
+
+    private void RemoveSelectedAncestors(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        string? parent = Path.GetDirectoryName(path);
+        while (!string.IsNullOrEmpty(parent))
+        {
+            if (_selectedPaths.Contains(parent))
+            {
+                _selectedPaths.Remove(parent);
+                _selectedItemCache.Remove(parent);
+            }
+            parent = Path.GetDirectoryName(parent);
+        }
+    }
+
     private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ExplorerItem.IsSelected) && sender is ExplorerItem item)
@@ -398,6 +438,21 @@ public class ExplorerViewModel : ViewModelBase
             {
                 _selectedPaths.Remove(item.FullPath);
                 _selectedItemCache.Remove(item.FullPath);
+
+                // If unchecking a folder, recursively remove any selected sub-items inside it
+                if (item.IsDirectory)
+                {
+                    string folderPrefix = item.FullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    var subPaths = _selectedPaths.Where(p => p.StartsWith(folderPrefix, StringComparison.OrdinalIgnoreCase)).ToList();
+                    foreach (var sub in subPaths)
+                    {
+                        _selectedPaths.Remove(sub);
+                        _selectedItemCache.Remove(sub);
+                    }
+                }
+
+                // If unchecking an item inside a folder, remove parent folders from selection
+                RemoveSelectedAncestors(item.FullPath);
             }
 
             UpdateStats();
@@ -610,7 +665,29 @@ public class ExplorerViewModel : ViewModelBase
 
     public List<ExplorerItem> GetSelectedItems()
     {
-        return _selectedItemCache.Values.ToList();
+        var all = _selectedItemCache.Values.ToList();
+        if (all.Count == 0) return all;
+
+        var dirPaths = all.Where(i => i.IsDirectory)
+                          .Select(i => i.FullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar)
+                          .ToList();
+
+        if (dirPaths.Count == 0) return all;
+
+        var topLevel = new List<ExplorerItem>();
+        foreach (var item in all)
+        {
+            bool hasParentDirInSelection = dirPaths.Any(dp =>
+                !item.FullPath.Equals(dp.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) &&
+                item.FullPath.StartsWith(dp, StringComparison.OrdinalIgnoreCase));
+
+            if (!hasParentDirInSelection)
+            {
+                topLevel.Add(item);
+            }
+        }
+
+        return topLevel;
     }
 
     public static string FormatBytes(long bytes)
