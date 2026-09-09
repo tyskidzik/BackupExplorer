@@ -1,0 +1,680 @@
+﻿<ui:FluentWindow x:Class="BackupExplorer.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:local="clr-namespace:BackupExplorer.App"
+        xmlns:vm="clr-namespace:BackupExplorer.App.ViewModels"
+        xmlns:models="clr-namespace:BackupExplorer.App.Models"
+        mc:Ignorable="d"
+        Title="Backup Explorer"
+        Height="820" Width="1280"
+        MinHeight="620" MinWidth="980"
+        WindowStartupLocation="CenterScreen"
+        WindowBackdropType="Mica"
+        ExtendsContentIntoTitleBar="True">
+
+    <ui:FluentWindow.Resources>
+        <!-- Column Header Gripper -->
+        <ControlTemplate x:Key="GridViewColumnHeaderGripperTemplate" TargetType="{x:Type Thumb}">
+            <Border Background="Transparent" Padding="0">
+                <Rectangle Fill="{DynamicResource CardStrokeColorDefaultBrush}" Width="1" VerticalAlignment="Stretch" HorizontalAlignment="Center" />
+            </Border>
+        </ControlTemplate>
+
+        <!-- GridViewColumnHeader Style matching Dark Fluent Theme -->
+        <Style TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
+                        <Grid SnapsToDevicePixels="True" Background="Transparent">
+                            <Border x:Name="HeaderBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    TextElement.Foreground="{TemplateBinding Foreground}">
+                                <ContentPresenter x:Name="HeaderContent"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  RecognizesAccessKey="True"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            </Border>
+                            <Thumb x:Name="PART_HeaderGripper"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,0,-4,0"
+                                   Width="8"
+                                   Template="{StaticResource GridViewColumnHeaderGripperTemplate}"
+                                   Cursor="SizeWE" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Role" Value="Padding">
+                                <Setter TargetName="PART_HeaderGripper" Property="Visibility" Value="Collapsed" />
+                                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Explorer GridView ListViewItem Style with High-Contrast Highlight -->
+        <Style x:Key="ExplorerListViewItemStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Margin" Value="2,1" />
+            <Setter Property="Padding" Value="0,2" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- Left accent indicator pill when selected -->
+                                <Border x:Name="SelectionPill"
+                                        Width="3"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Stretch"
+                                        Margin="1,2,0,2"
+                                        CornerRadius="1.5"
+                                        Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                        Visibility="Collapsed" />
+
+                                <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Hover -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            </Trigger>
+
+                            <!-- Selected: Distinct card highlight with accent border and high-contrast white text -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                                <Setter TargetName="SelectionPill" Property="Visibility" Value="Visible" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </Trigger>
+
+                            <!-- Selected + Hover -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                                <Setter TargetName="SelectionPill" Property="Visibility" Value="Visible" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </MultiTrigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Queue ListViewItem Style -->
+        <Style x:Key="QueueListViewItemStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Margin" Value="2,1" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Default ListViewItem points to ExplorerListViewItemStyle -->
+        <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource ExplorerListViewItemStyle}" />
+    </ui:FluentWindow.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- TITLE BAR -->
+        <ui:TitleBar Grid.Row="0" Title="Backup Explorer - Modern Backup &amp; Archiver" ShowMaximize="True" ShowMinimize="True" />
+
+        <!-- MAIN CONTENT AREA -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" MinWidth="180" MaxWidth="320" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="420" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="380" MinWidth="320" MaxWidth="500" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT SIDEBAR: DRIVES & QUICK ACCESS -->
+            <Border Grid.Column="0" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10,8,10,12">
+                        <!-- Quick Access -->
+                        <TextBlock Text="QUICK ACCESS" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="8,4,8,6" />
+                        <ItemsControl ItemsSource="{Binding Explorer.QuickAccessItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:DriveOrFolderItem}">
+                                    <ui:Button Appearance="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                               Margin="0,1" Padding="8,6" Cursor="Hand" Click="OnSidebarItemClick">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Drives -->
+                        <TextBlock Text="DRIVES &amp; DEVICES" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="8,16,8,6" />
+                        <ItemsControl ItemsSource="{Binding Explorer.DriveItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:DriveOrFolderItem}">
+                                    <ui:Card Margin="0,2" Padding="10,8" Cursor="Hand" MouseLeftButtonUp="OnSidebarItemClick">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Image Grid.Column="0" Source="{Binding Icon}" Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Medium" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                <ProgressBar Value="{Binding UsedPercent}" Maximum="100" Height="4" Margin="0,4,0,3" />
+                                                <TextBlock Text="{Binding FreeSpaceFormatted}" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </ui:Card>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- SPLITTER 1 -->
+            <GridSplitter Grid.Column="1" Width="1" HorizontalAlignment="Center" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+            <!-- CENTER PANE: FILE EXPLORER -->
+            <Grid Grid.Column="2" Margin="14,8,14,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Navigation Controls, Address Bar, & Search -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="180" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,8,0">
+                        <ui:Button Appearance="Secondary" Padding="8,6" Margin="0,0,3,0"
+                                   Command="{Binding Explorer.GoBackCommand}" ToolTip="Back">
+                            <ui:SymbolIcon Symbol="ArrowLeft24" />
+                        </ui:Button>
+                        <ui:Button Appearance="Secondary" Padding="8,6" Margin="0,0,3,0"
+                                   Command="{Binding Explorer.GoForwardCommand}" ToolTip="Forward">
+                            <ui:SymbolIcon Symbol="ArrowRight24" />
+                        </ui:Button>
+                        <ui:Button Appearance="Secondary" Padding="8,6" Margin="0,0,3,0"
+                                   Command="{Binding Explorer.GoUpCommand}" ToolTip="Up to Parent Folder">
+                            <ui:SymbolIcon Symbol="ArrowUp24" />
+                        </ui:Button>
+                        <ui:Button Appearance="Secondary" Padding="8,6"
+                                   Command="{Binding Explorer.RefreshCommand}" ToolTip="Refresh">
+                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                        </ui:Button>
+                    </StackPanel>
+
+                    <!-- Breadcrumbs / Address Bar -->
+                    <Border Grid.Column="1" CornerRadius="4" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                            BorderThickness="1" Background="{DynamicResource ControlFillColorDefaultBrush}" Padding="4,2">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Explorer.Breadcrumbs}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:BreadcrumbItem}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:Button Appearance="Transparent" Padding="6,3" Content="{Binding Name}"
+                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                       Click="OnBreadcrumbClick" Cursor="Hand" />
+                                            <TextBlock Text="/" Margin="2,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <ui:TextBox Grid.Column="2" Margin="8,0,0,0" PlaceholderText="Search items..."
+                                Text="{Binding Explorer.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+
+                <!-- Selection & Category Toolbar -->
+                <Grid Grid.Row="1" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Quick Check Tools -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <ui:Button Appearance="Secondary" Content="All" Margin="0,0,3,0" Padding="8,4" Command="{Binding Explorer.SelectAllCommand}" ToolTip="Select All Items" />
+                        <ui:Button Appearance="Secondary" Content="Files" Margin="0,0,3,0" Padding="8,4" Command="{Binding Explorer.CheckFilesOnlyCommand}" ToolTip="Select Files Only" />
+                        <ui:Button Appearance="Secondary" Content="Folders" Margin="0,0,3,0" Padding="8,4" Command="{Binding Explorer.CheckFoldersOnlyCommand}" ToolTip="Select Folders Only" />
+                        <ui:Button Appearance="Secondary" Content="Invert" Margin="0,0,3,0" Padding="8,4" Command="{Binding Explorer.InvertSelectionCommand}" ToolTip="Invert Checkboxes" />
+                        <ui:Button Appearance="Secondary" Content="None" Margin="0,0,10,0" Padding="8,4" Command="{Binding Explorer.UnselectAllCommand}" ToolTip="Clear All Checkmarks" />
+
+                        <!-- Category Filter -->
+                        <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <ComboBox ItemsSource="{Binding Explorer.Categories}" SelectedItem="{Binding Explorer.SelectedCategory, Mode=TwoWay}"
+                                  Width="105" Height="28" Padding="6,2" />
+                    </StackPanel>
+
+                    <!-- Add Selected Button -->
+                    <ui:Button Grid.Column="2" Appearance="Primary" Padding="14,6"
+                               Click="OnAddSelectedToQueueClick">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Add24" Margin="0,0,6,0" />
+                            <TextBlock Text="Add Selected to Queue" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ui:Button>
+                </Grid>
+
+                <!-- File & Folder List with Clickable Sort Headers & Multi-Select -->
+                <Border Grid.Row="2" CornerRadius="6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid>
+                        <ProgressBar IsIndeterminate="True" VerticalAlignment="Top" Height="3"
+                                     Visibility="{Binding Explorer.IsLoading, Converter={StaticResource BoolToVisConverter}}" />
+
+                        <ListView x:Name="ExplorerListView"
+                                  ItemsSource="{Binding Explorer.DisplayedItems}"
+                                  ItemContainerStyle="{StaticResource ExplorerListViewItemStyle}"
+                                  BorderThickness="0" Background="Transparent"
+                                  SelectionMode="Extended"
+                                  MouseDoubleClick="OnExplorerItemDoubleClick"
+                                  KeyDown="OnExplorerListViewKeyDown"
+                                  GridViewColumnHeader.Click="OnGridViewColumnHeaderClick"
+                                  VirtualizingStackPanel.IsVirtualizing="True"
+                                  VirtualizingStackPanel.VirtualizationMode="Recycling">
+
+                            <!-- Context Menu -->
+                            <ListView.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="☑️ Check Selected (Space)" Click="OnCheckSelectedClick" />
+                                    <MenuItem Header="⬜ Uncheck Selected" Click="OnUncheckSelectedClick" />
+                                    <Separator />
+                                    <MenuItem Header="➕ Add Selected to Backup Queue" Click="OnAddSelectedToQueueClick" />
+                                    <Separator />
+                                    <MenuItem Header="📁 Open Folder" Click="OnOpenFolderContextClick" />
+                                    <MenuItem Header="🔍 Show in Windows Explorer" Click="OnShowInExplorerContextClick" />
+                                </ContextMenu>
+                            </ListView.ContextMenu>
+
+                            <ListView.View>
+                                <GridView>
+                                    <!-- Checkbox Column -->
+                                    <GridViewColumn Width="38">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type models:ExplorerItem}">
+                                                <Grid Background="Transparent"
+                                                      HorizontalAlignment="Stretch"
+                                                      VerticalAlignment="Stretch"
+                                                      Control.PreviewMouseDoubleClick="OnCheckBoxCellDoubleClick">
+                                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              Padding="0" Margin="0"
+                                                              MinWidth="0" MinHeight="0"
+                                                              Width="20" Height="20"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              PreviewMouseDoubleClick="OnCheckBoxDoubleClick"
+                                                              MouseDoubleClick="OnCheckBoxDoubleClick" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+
+                                    <!-- Name Column (Sortable) -->
+                                    <GridViewColumn Header="{Binding DataContext.Explorer.NameHeader, RelativeSource={RelativeSource AncestorType=Window}}" Width="280">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type models:ExplorerItem}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                               FontWeight="{Binding IsDirectory, Converter={x:Static local:MainWindow.BoolToFontWeightConverter}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+
+                                    <!-- Type Column (Sortable) -->
+                                    <GridViewColumn Header="{Binding DataContext.Explorer.TypeHeader, RelativeSource={RelativeSource AncestorType=Window}}" Width="85">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type models:ExplorerItem}">
+                                                <TextBlock Text="{Binding Extension}" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+
+                                    <!-- Size Column (Sortable) -->
+                                    <GridViewColumn Header="{Binding DataContext.Explorer.SizeHeader, RelativeSource={RelativeSource AncestorType=Window}}" Width="95">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type models:ExplorerItem}">
+                                                <TextBlock Text="{Binding SizeFormatted}" TextAlignment="Right" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+
+                                    <!-- Date Modified Column (Sortable) -->
+                                    <GridViewColumn Header="{Binding DataContext.Explorer.DateModifiedHeader, RelativeSource={RelativeSource AncestorType=Window}}" Width="145">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type models:ExplorerItem}">
+                                                <TextBlock Text="{Binding ModifiedDateFormatted}" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- SPLITTER 2 -->
+            <GridSplitter Grid.Column="3" Width="1" HorizontalAlignment="Center" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+            <!-- RIGHT PANE: BACKUP CONFIGURATION & QUEUE (PEAZIP STYLE) -->
+            <Border Grid.Column="4" Background="{DynamicResource SubtleFillColorSecondaryBrush}" Padding="14,8,14,10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- CARD 1: STAGED QUEUE -->
+                        <ui:Card Margin="0,0,0,10" Padding="12">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="BACKUP QUEUE" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        <TextBlock Text="{Binding Config.StagedSummary}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <ui:Button Grid.Column="1" Appearance="Transparent" Content="Clear All" Command="{Binding Config.ClearStagedCommand}"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </Grid>
+
+                                <!-- Staged Items List -->
+                                <Border MinHeight="140" MaxHeight="220" CornerRadius="4" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                        BorderThickness="1" Background="{DynamicResource ControlFillColorDefaultBrush}">
+                                    <Grid>
+                                        <TextBlock Text="No items queued. Check files in the explorer and click 'Add Selected'."
+                                                   TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   TextAlignment="Center" Margin="16" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                   Visibility="{Binding Config.IsEmpty, Converter={StaticResource BoolToVisConverter}}" />
+
+                                        <ListView ItemsSource="{Binding Config.StagedItems}"
+                                                  ItemContainerStyle="{StaticResource QueueListViewItemStyle}"
+                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                  BorderThickness="0" Background="Transparent">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type models:StagedItem}">
+                                                    <Grid Margin="0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Image Grid.Column="0" Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding SizeFormatted}" Margin="8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                        <ui:Button Grid.Column="3" Appearance="Transparent" Padding="4,2"
+                                                                   Command="{Binding DataContext.Config.RemoveStagedItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                   CommandParameter="{Binding}" ToolTip="Remove from Queue">
+                                                            <ui:SymbolIcon Symbol="Dismiss24" />
+                                                        </ui:Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </ui:Card>
+
+                        <!-- CARD 2: DESTINATION -->
+                        <ui:Card Margin="0,0,0,10" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="DESTINATION FOLDER" FontWeight="Bold" FontSize="13" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox Grid.Column="0" Text="{Binding Config.DestinationDirectory, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ui:Button Grid.Column="1" Appearance="Secondary" Content="Browse..." Margin="6,0,0,0"
+                                               Command="{Binding Config.BrowseDestinationCommand}" />
+                                </Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Target Drive Free Space: " FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Config.DestinationFreeSpaceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ui:Card>
+
+                        <!-- CARD 3: COMPRESSION & PACKAGING (PEAZIP STYLE) -->
+                        <ui:Card Margin="0,0,0,12" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="COMPRESSION &amp; FORMAT" FontWeight="Bold" FontSize="13" Margin="0,0,0,8" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+
+                                <TextBlock Text="Backup Method:" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4" />
+                                <ComboBox SelectedIndex="{Binding Config.SelectedFormat, Mode=TwoWay}" Margin="0,0,0,8" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Direct Copy (Mirror, No Compression)" />
+                                    <ComboBoxItem Content="ZIP Archive (.zip, Universal)" />
+                                    <ComboBoxItem Content="7-Zip Archive (.7z, High Ratio LZMA)" />
+                                    <ComboBoxItem Content="TAR Archive (.tar, Uncompressed Tarball)" />
+                                    <ComboBoxItem Content="TAR.GZ Archive (.tar.gz, Linux Compatible)" />
+                                </ComboBox>
+
+                                <StackPanel Visibility="{Binding Config.IsArchiveFormat, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Compression Level:" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4" />
+                                    <ComboBox SelectedIndex="{Binding Config.SelectedLevel, Mode=TwoWay}" Margin="0,0,0,8" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="Store (0% - Instant packaging)" />
+                                        <ComboBoxItem Content="Fast (1 - Quick compression)" />
+                                        <ComboBoxItem Content="Normal (5 - Balanced)" />
+                                        <ComboBoxItem Content="Maximum (7 - High compression)" />
+                                        <ComboBoxItem Content="Ultra (9 - Maximum ratio)" />
+                                    </ComboBox>
+
+                                    <TextBlock Text="Archive Name:" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4" />
+                                    <ui:TextBox Text="{Binding Config.ArchiveName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                                    <CheckBox Content="Append timestamp (yyyy-MM-dd_HHmmss)" IsChecked="{Binding Config.AppendTimestamp}" Margin="0,0,0,6" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="Output: " FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock Text="{Binding Config.PreviewOutputName}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <CheckBox Content="Preserve Directory Hierarchy" IsChecked="{Binding Config.PreserveDirectoryStructure}" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </ui:Card>
+
+                        <!-- CARD 4: START BACKUP -->
+                        <ui:Button Appearance="Primary" Height="44" HorizontalAlignment="Stretch"
+                                   Command="{Binding StartBackupCommand}"
+                                   IsEnabled="{Binding Config.CanStartBackup}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Play24" Margin="0,0,8,0" />
+                                <TextBlock Text="START BACKUP" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- STATUS BAR -->
+        <Border Grid.Row="2" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0"
+                Background="{DynamicResource SubtleFillColorSecondaryBrush}" Padding="14,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding Explorer.StatusSummary}"
+                           FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ui:Button Appearance="Transparent" Padding="8,3"
+                               Command="{Binding ToggleThemeCommand}" ToolTip="Toggle Light / Dark Mode">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="DarkTheme24" Margin="0,0,6,0" />
+                            <TextBlock Text="Theme" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- PROGRESS MODAL OVERLAY -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Background="#B0000000"
+              Visibility="{Binding IsProgressModalOpen, Converter={StaticResource BoolToVisConverter}}">
+            <Border Width="560" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    CornerRadius="8" Background="#242424" BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="36" ShadowDepth="10" Direction="270" Color="#000000" Opacity="0.8" />
+                </Border.Effect>
+                <StackPanel>
+                    <Grid Margin="0,0,0,16" Height="46">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Execution.StatusMessage}" FontWeight="Bold" FontSize="15"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Height="22" />
+                            <TextBlock Text="{Binding Execution.CurrentFileName}" FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Height="18" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <ProgressBar Value="{Binding Execution.OverallProgress}" Maximum="100" Height="8" Margin="0,0,0,14" />
+
+                    <UniformGrid Columns="3" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="PROCESSED" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Text="{Binding Execution.ProcessedBytesFormatted}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="SPEED" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Text="{Binding Execution.SpeedFormatted}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Right">
+                            <TextBlock Text="REMAINING" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Text="{Binding Execution.RemainingFormatted}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <Border Margin="0,0,0,16" Padding="12" CornerRadius="4" Background="{DynamicResource ControlFillColorDefaultBrush}"
+                            Visibility="{Binding Execution.IsComplete, Converter={StaticResource BoolToVisConverter}}">
+                        <TextBlock Text="{Binding Execution.CompletionSummary}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Border>
+
+                    <Grid>
+                        <ui:Button Appearance="Danger" Content="Cancel Backup" HorizontalAlignment="Right"
+                                   Command="{Binding Execution.CancelCommand}"
+                                   Visibility="{Binding Execution.IsExecuting, Converter={StaticResource BoolToVisConverter}}" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                    Visibility="{Binding Execution.IsComplete, Converter={StaticResource BoolToVisConverter}}">
+                            <ui:Button Appearance="Secondary" Content="Open Destination Folder" Margin="0,0,8,0"
+                                       Command="{Binding Execution.OpenDestinationCommand}" />
+                            <ui:Button Appearance="Primary" Content="Done"
+                                       Command="{Binding Execution.CloseCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

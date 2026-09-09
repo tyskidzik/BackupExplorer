@@ -1,4 +1,4 @@
-# Backup Explorer
+﻿# Backup Explorer
 
 A modern, high-performance Windows backup and archiving utility built on **.NET 8** and **WPF** featuring **Windows 11 Fluent 2 Design** (`WPF-UI`) and **SharpCompress**.
 
@@ -41,21 +41,21 @@ A modern, high-performance Windows backup and archiving utility built on **.NET 
 ## Project Structure
 
 ```
-BackupProjekt/
-├── BackupProjekt.sln             # Visual Studio / dotnet Solution
+BackupExplorer/
+├── BackupExplorer.sln             # Visual Studio / dotnet Solution
 ├── src/
-│   ├── BackupProjekt.Core/       # Core Archiving & Backup Engine (.NET 8)
+│   ├── BackupExplorer.Core/       # Core Archiving & Backup Engine (.NET 8)
 │   │   ├── Models/               # Data contracts (BackupConfig, BackupItem, Progress, Result)
 │   │   └── Services/             # IBackupEngine & BackupEngine implementation
 │   │
-│   └── BackupProjekt.App/        # Windows 11 Fluent 2 WPF Application
+│   └── BackupExplorer.App/        # Windows 11 Fluent 2 WPF Application
 │       ├── Converters/           # WPF XAML value converters
 │       ├── Models/               # UI models (ExplorerItem, DriveOrFolderItem, StagedItem)
 │       ├── Services/             # ShellIconService (Windows API shell icons)
 │       └── ViewModels/           # MVVM ViewModels (Explorer, Config, Execution, Main)
 │
 └── tests/
-    └── BackupProjekt.Tests/      # xUnit automated test suite (14 passing tests)
+    └── BackupExplorer.Tests/      # xUnit automated test suite (14 passing tests)
 ```
 
 ---
@@ -76,17 +76,17 @@ cd BackupExplorer
 dotnet test
 
 # Launch the app
-dotnet run --project src/BackupProjekt.App
+dotnet run --project src/BackupExplorer.App
 ```
 
 ### Build Standalone Executables
 Run standard `dotnet publish`:
 ```powershell
 # Lightweight single-file EXE (~9 MB, requires .NET 8 on the PC):
-dotnet publish src/BackupProjekt.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -o publish/Lightweight
+dotnet publish src/BackupExplorer.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -o publish/Lightweight
 
 # 100% Self-Contained standalone EXE (runs on any Windows PC without .NET):
-dotnet publish src/BackupProjekt.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o publish/Standalone
+dotnet publish src/BackupExplorer.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o publish/Standalone
 ```
 
 ---
