@@ -32,8 +32,12 @@ $RECYCLE.BIN/
 *.binlog
 
 ## Local Scratch and Debug Assets
-/app_screenshot.png
-/checkbox_crop.png
-/checkbox_crop2.png
-/header_crop.png
-/wpf_ui_brushes.txt
+app_screenshot.png
+checkbox_crop*.png
+header_crop.png
+wpf_ui_brushes.txt
+
+## Local Scripts (not tracked on repo)
+publish.bat
+*.bat
+
