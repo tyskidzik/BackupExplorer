@@ -1,39 +1,40 @@
 ﻿# Backup Explorer
 
-A modern, high-performance Windows backup and archiving utility built on **.NET 8** and **WPF** featuring **Windows 11 Fluent 2 Design** (`WPF-UI`) and **SharpCompress**.
+A modern, high-performance Windows backup and archiving utility built on **.NET 8** and **WPF** featuring **Windows 11 Fluent 2 Design** (`WPF-UI`) and **SharpCompress**. 
+Made for personal use, but it turned out quite useful so i decided to share.
 
 ---
 
 ## Features
 
-* 🗂️ **Built-in File Explorer**:
+*  **Built-in File Explorer**:
   * Integrated drive storage usage gauges and Windows Quick Access shortcuts.
   * Interactive column sorting (**Name**, **Type**, **Size**, **Date Modified**) with ascending/descending indicators.
   * Multi-item selection with keyboard navigation, spacebar toggle, and bulk selection tools (*All*, *Files*, *Folders*, *Invert*, *None*).
   * Checkmark persistence across directory navigation and history (Back/Forward).
 
-* 🌐 **Automatic Multi-Drive Namespacing**:
+*  **Automatic Multi-Drive Namespacing**:
   * Back up files and folders spanning multiple storage drives (`C:\`, `D:\`, network shares) in a single job.
   * Automatically isolates volumes (`Drive_C/...`, `Drive_D/...`) to prevent name collisions across drives.
   * Preserves clean, natural folder structures for single-drive backups without unnecessary prefixing.
 
-* ⚡ **Compression & Packaging Formats**:
+*  **Compression & Packaging Formats**:
   * **Direct Copy (Mirror)**: Fast uncompressed mirror with preserved folder hierarchies.
   * **ZIP Archive (`.zip`)**: Standard zip format with adjustable compression levels (Store, Fast, Normal, Maximum, Ultra).
   * **7-Zip Archive (`.7z`)**: High-compression LZMA archive.
   * **TAR Archive (`.tar`)**: Uncompressed Unix tarball.
   * **TAR.GZ Archive (`.tar.gz`)**: GZip-compressed tarball.
 
-* 🚀 **Zero "C: Drive Limbo" Streaming**:
+*  **Zero "C: Drive Limbo" Streaming**:
   * Reads source files and streams compressed data **directly to your chosen destination directory**.
   * No temporary staging files created on `C:\` or in `%TEMP%`, preserving SSD endurance and preventing disk space exhaustion.
 
-* 📊 **Real-Time Progress & Throttle Control**:
+*  **Real-Time Progress & Throttle Control**:
   * Live intra-file streaming progress, speed (MB/s), elapsed time, and ETA calculations.
   * Throttled UI dispatching to keep the interface smooth and responsive.
   * Instant cancellation with automatic cleanup of incomplete files.
 
-* 📦 **Single-File Standalone Executable**:
+*  **Single-File Standalone Executable**:
   * Packaged into a clean, standalone single `.exe` file (`publish\Lightweight\BackupExplorer.exe`) with zero loose DLLs or debug files.
 
 ---
