@@ -1,0 +1,39 @@
+## Build Results
+[Bb]in/
+[Oo]bj/
+publish/
+dist/
+bld/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## User-specific / IDE Files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+## OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+## Logs and Diagnostics
+*.log
+*.binlog
+
+## Local Scratch and Debug Assets
+/app_screenshot.png
+/checkbox_crop.png
+/checkbox_crop2.png
+/header_crop.png
+/wpf_ui_brushes.txt
