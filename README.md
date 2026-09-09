@@ -43,7 +43,6 @@ A modern, high-performance Windows backup and archiving utility built on **.NET 
 ```
 BackupProjekt/
 ├── BackupProjekt.sln             # Visual Studio / dotnet Solution
-├── publish.bat                   # 1-click single-file executable builder
 ├── src/
 │   ├── BackupProjekt.Core/       # Core Archiving & Backup Engine (.NET 8)
 │   │   ├── Models/               # Data contracts (BackupConfig, BackupItem, Progress, Result)
@@ -81,7 +80,7 @@ dotnet run --project src/BackupProjekt.App
 ```
 
 ### Build Standalone Executables
-Double-click `publish.bat` or run:
+Run standard `dotnet publish`:
 ```powershell
 # Lightweight single-file EXE (~9 MB, requires .NET 8 on the PC):
 dotnet publish src/BackupProjekt.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -o publish/Lightweight
